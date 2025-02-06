@@ -1,0 +1,14 @@
+# Gradle files
+/.gradle/
+/build/
+
+# Local configuration
+/local.properties
+
+# Android/IntelliJ
+.idea/
+*.iml
+
+# Misc
+*.log
+.DS_Store
