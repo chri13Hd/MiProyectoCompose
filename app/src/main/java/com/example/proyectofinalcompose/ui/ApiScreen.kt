@@ -1,6 +1,7 @@
 package com.example.proyectofinalcompose.ui
 
-import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.os.Process
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -18,41 +19,58 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
+import com.example.proyectofinalcompose.NotificationHelper
 import com.example.proyectofinalcompose.data.ApiUser
-import com.example.proyectofinalcompose.data.NotificationWorker
 import com.example.proyectofinalcompose.viewmodel.ApiViewModel
-import java.util.concurrent.TimeUnit
 import kotlin.system.exitProcess
 
 @Composable
 fun ApiScreen(viewModel: ApiViewModel = viewModel(), onBackPressed: () -> Unit) {
-    val users by viewModel.users.collectAsState()
-    val context = LocalContext.current // Obtener contexto para WorkManager
+    val users by viewModel.users.collectAsState(initial = emptyList())
+    val context = LocalContext.current
 
-    LaunchedEffect(key1 = true) { // Evitar recomposiciones innecesarias
+    // 🔹 Estado para controlar las notificaciones periódicas con Handler
+    val notificationHandler = remember { Handler(Looper.getMainLooper()) }
+    val notificationRunnable = remember {
+        object : Runnable {
+            override fun run() {
+                NotificationHelper.showAccessNotification(context, "¡No olvides consultar la API!")
+                notificationHandler.postDelayed(this, 30_000) // Se repite cada 30 segundos
+            }
+        }
+    }
+
+    // Usamos DisposableEffect para detener las notificaciones cuando la pantalla sea removida
+    DisposableEffect(key1 = true) {
+        // Cuando el composable es montado, iniciar las notificaciones
+        notificationHandler.postDelayed(notificationRunnable, 30_000)
+
+        onDispose {
+            // Cuando la pantalla sea desmontada, detener las notificaciones
+            notificationHandler.removeCallbacks(notificationRunnable)
+        }
+    }
+
+    LaunchedEffect(key1 = true) {
         viewModel.fetchUsers()
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F5)) // Fondo gris claro
+            .background(Color(0xFFF5F5F5))
             .padding(16.dp)
     ) {
         Column {
-            // Botones de navegación
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Botón para volver a la pantalla anterior y reactivar notificaciones
+                // 🔙 Botón para volver y detener las notificaciones periódicas
                 Button(
                     onClick = {
-                        scheduleNotification(context) // 🔔 Reactivar notificaciones periódicas
-                        onBackPressed() // 🔙 Volver a la pantalla anterior
+                        notificationHandler.removeCallbacks(notificationRunnable) // Detiene el Runnable
+                        onBackPressed() // Llama a la acción de volver
                     },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp),
@@ -61,11 +79,11 @@ fun ApiScreen(viewModel: ApiViewModel = viewModel(), onBackPressed: () -> Unit) 
                     Text("Volver", fontSize = 18.sp, color = Color.White)
                 }
 
-                // Botón para cerrar la aplicación
+                // ❌ Botón para cerrar la aplicación
                 Button(
                     onClick = {
                         Process.killProcess(Process.myPid()) // Cierra la app
-                        exitProcess(0) // Finaliza la ejecución
+                        exitProcess(0)
                     },
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp),
@@ -77,7 +95,7 @@ fun ApiScreen(viewModel: ApiViewModel = viewModel(), onBackPressed: () -> Unit) 
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Mostrar usuarios o mensaje de carga
+            // 📝 Mostrar usuarios o mensaje de carga
             if (users.isEmpty()) {
                 Text(
                     text = "Cargando usuarios...",
@@ -85,25 +103,13 @@ fun ApiScreen(viewModel: ApiViewModel = viewModel(), onBackPressed: () -> Unit) 
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
             } else {
+                // 📜 Lista de usuarios obtenidos
                 LazyColumn(modifier = Modifier.padding(top = 8.dp)) {
                     items(users) { user -> UserCard(user) }
                 }
             }
         }
     }
-}
-
-// 🔹 Función para reactivar las notificaciones periódicas
-fun scheduleNotification(context: Context) {
-    val workRequest = PeriodicWorkRequestBuilder<NotificationWorker>(
-        15, TimeUnit.MINUTES
-    ).build()
-
-    WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-        "NotificationWorker",
-        ExistingPeriodicWorkPolicy.REPLACE, // 🔄 Reemplaza cualquier tarea anterior
-        workRequest
-    )
 }
 
 // 🔹 Componente de Tarjeta para cada usuario
@@ -139,3 +145,4 @@ fun UserInfo(label: String, value: String) {
         )
     }
 }
+

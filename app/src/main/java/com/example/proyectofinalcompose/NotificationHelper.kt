@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -25,20 +26,20 @@ object NotificationHelper {
             // Crear un PendingIntent para la acción de la notificación
             val pendingIntent = PendingIntent.getActivity(
                 context,
-                System.currentTimeMillis().toInt(), // Usar un identificador único
+                0, // Usar un identificador fijo o único por notificación
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
 
             // Construir la notificación
             val notification = NotificationCompat.Builder(context, NotificationUtils.getChannelId())
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.ic_launcher_foreground) // Asegúrate de que este ícono exista
                 .setContentTitle("Consulta la API")
                 .setContentText(message)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setContentIntent(pendingIntent)
                 .addAction(
-                    R.drawable.ic_launcher_foreground,
+                    R.drawable.ic_launcher_foreground, // Ícono de la acción
                     "Abrir API",
                     pendingIntent
                 )
@@ -47,8 +48,12 @@ object NotificationHelper {
 
             // Enviar la notificación
             with(NotificationManagerCompat.from(context)) {
-                notify(System.currentTimeMillis().toInt(), notification) // Usar identificador único
+                notify(1, notification) // Usar un ID constante o único para las notificaciones
             }
+        } else {
+            // Manejar el caso donde el permiso no es otorgado
+            Log.d("NotificationHelper", "Permiso de notificación no otorgado")
         }
     }
 }
+

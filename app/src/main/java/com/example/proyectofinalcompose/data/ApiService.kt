@@ -16,7 +16,7 @@ data class Address(
     val zipcode: String = ""
 )
 
-interface ApiService {
+interface ApiService{
     @GET("users")
     suspend fun getUsers(): List<ApiUser>
 }

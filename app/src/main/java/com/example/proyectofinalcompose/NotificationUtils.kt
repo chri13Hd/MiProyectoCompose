@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
+import android.util.Log
 
 object NotificationUtils {
     private const val CHANNEL_ID = "user_notifications"
@@ -15,20 +16,22 @@ object NotificationUtils {
             val notificationManager: NotificationManager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-            // Verificar si el canal ya existe
             val existingChannel = notificationManager.getNotificationChannel(CHANNEL_ID)
             if (existingChannel == null) {
                 val channel = NotificationChannel(
                     CHANNEL_ID,
-                    CHANNEL_NAME,
+                    "Canal de Notificaciones",
                     NotificationManager.IMPORTANCE_DEFAULT
                 ).apply {
-                    description = "Notificaciones para el usuario"
+                    description = "Este es el canal para las notificaciones"
                 }
                 notificationManager.createNotificationChannel(channel)
+                Log.d("NotificationChannel", "Canal de notificación creado")
             }
         }
     }
+
+
 
     fun getChannelId(): String = CHANNEL_ID
 }

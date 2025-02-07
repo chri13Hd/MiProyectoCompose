@@ -1,4 +1,4 @@
-package com.example.proyectofinalcompose.data
+/*package com.example.proyectofinalcompose.data
 
 import androidx.room.TypeConverter
 import java.text.SimpleDateFormat
@@ -25,3 +25,4 @@ class Converters {
         return date?.let { dateFormat.format(it) }
     }
 }
+*/
